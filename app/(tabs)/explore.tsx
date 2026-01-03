@@ -1,112 +1,216 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors, Radius, Spacing } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { router } from "expo-router";
 
-export default function TabTwoScreen() {
+export default function ExploreScreen() {
+  const colorScheme = useColorScheme() ?? "dark";
+  const theme = Colors[colorScheme];
+
+  // animations
+  const fade = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fade, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slide, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View
+      style={[
+        styles.screen,
+        { backgroundColor: theme.backgroundSoft },
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.content,
+          { opacity: fade, transform: [{ translateY: slide }] },
+        ]}
+      >
+        <Text style={[styles.title, { color: theme.text }]}>
+          Explore Budyy 🚀
+        </Text>
+
+        <Text style={[styles.sub, { color: theme.textMuted }]}>
+          Tips, features and upcoming super powers.
+        </Text>
+
+        {/* CARD 1 */}
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme.cardGlass, borderColor: theme.border },
+          ]}
+        >
+          <View style={styles.cardHeader}>
+            <IconSymbol
+              name="paperplane.fill"
+              size={20}
+              color={theme.tint}
+              withBadge
+            />
+            <Text style={[styles.cardTitle, { color: theme.text }]}>
+              Chat with Budyy
+            </Text>
+          </View>
+
+          <Text style={[styles.cardBody, { color: theme.textMuted }]}>
+            Ask questions about spending, budgeting, habits and money mindset —
+            just like Cleo but calmer 😄
+          </Text>
+
+          <Pressable
+            style={styles.cta}
+            onPress={() => router.push("/(tabs)/chat")}
+          >
+            <Text style={styles.ctaText}>Open chat</Text>
+          </Pressable>
+        </View>
+
+        {/* CARD 2 */}
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme.cardGlass, borderColor: theme.border },
+          ]}
+        >
+          <View style={styles.cardHeader}>
+            <IconSymbol
+              name="chart.pie.fill"
+              size={20}
+              color={theme.icon}
+              withBadge
+            />
+            <Text style={[styles.cardTitle, { color: theme.text }]}>
+              Safe-to-spend
+            </Text>
+          </View>
+
+          <Text style={[styles.cardBody, { color: theme.textMuted }]}>
+            We subtract bills + essentials so you know what’s okay to spend
+            without stressing.
+          </Text>
+
+          <Pressable style={styles.secondaryBtn}>
+            <Text style={styles.secondaryText}>
+              Coming soon
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* CARD 3 */}
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme.cardGlass, borderColor: theme.border },
+          ]}
+        >
+          <View style={styles.cardHeader}>
+            <IconSymbol
+              name="flag.fill"
+              size={20}
+              color={theme.tint}
+              withBadge
+            />
+            <Text style={[styles.cardTitle, { color: theme.text }]}>
+              Build saving goals
+            </Text>
+          </View>
+
+          <Text style={[styles.cardBody, { color: theme.textMuted }]}>
+            Travel, visa costs, emergency fund, house deposit — we help make
+            realistic plans.
+          </Text>
+
+          <Pressable
+            style={styles.cta}
+            onPress={() => router.push("/(tabs)/goals")}
+          >
+            <Text style={styles.ctaText}>Create a goal</Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  screen: {
+    flex: 1,
   },
-  titleContainer: {
-    flexDirection: 'row',
+  content: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    gap: Spacing.md,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "800",
+  },
+  sub: {
+    fontSize: 13,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     gap: 8,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  cardBody: {
+    fontSize: 13,
+  },
+  cta: {
+    marginTop: 10,
+    backgroundColor: "#38BDF8",
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  ctaText: {
+    color: "#020617",
+    fontWeight: "800",
+    fontSize: 14,
+  },
+  secondaryBtn: {
+    marginTop: 10,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: "#64748B",
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  secondaryText: {
+    color: "#CBD5E1",
+    fontWeight: "700",
   },
 });

@@ -1,3 +1,4 @@
+// app/_layout.tsx
 import { Stack } from "expo-router";
 import "react-native-reanimated";
 
@@ -6,6 +7,7 @@ export default function RootLayout() {
     <Stack>
       {/* Public screens */}
       <Stack.Screen name="signup" options={{ title: "Sign up" }} />
+      <Stack.Screen name="login" options={{ title: "Log in" }} />
       <Stack.Screen name="welcome" options={{ title: "Welcome" }} />
 
       {/* App after login (tabs) */}

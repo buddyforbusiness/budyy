@@ -1,41 +1,77 @@
-// Fallback for using MaterialIcons on Android and web.
+// components/ui/icon-symbol.tsx
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
-import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { SymbolWeight } from "expo-symbols";
+import { ComponentProps } from "react";
+import {
+  OpaqueColorValue,
+  StyleProp,
+  TextStyle,
+} from "react-native";
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 /**
- * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
+ * Map SF Symbols -> Material Icons names
  */
 const MAPPING = {
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as IconMapping;
+  "house.fill": "home",
+  "paperplane.fill": "send",
+  "chevron.left.forwardslash.chevron.right": "code",
+  "chevron.right": "chevron-right",
 
-/**
- * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
- * This ensures a consistent look across platforms, and optimal resource usage.
- * Icon `name`s are based on SF Symbols and require manual mapping to Material Icons.
- */
+  // NEW icons we use
+  "flag.fill": "flag",
+  "chart.pie.fill": "pie-chart",
+  "person.crop.circle": "person",
+} as const;
+
+export type IconSymbolName = keyof typeof MAPPING;
+
+type IconSymbolProps = {
+  name: IconSymbolName;
+  size?: number;
+  color?: string | OpaqueColorValue;
+  style?: StyleProp<TextStyle>;
+  weight?: SymbolWeight;
+  withBadge?: boolean;
+};
+
 export function IconSymbol({
   name,
   size = 24,
   color,
   style,
-}: {
-  name: IconSymbolName;
-  size?: number;
-  color: string | OpaqueColorValue;
-  style?: StyleProp<TextStyle>;
-  weight?: SymbolWeight;
-}) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  withBadge = false,
+}: IconSymbolProps) {
+  const scheme = useColorScheme() ?? "light";
+
+  const tint =
+    color ??
+    (scheme === "light" ? Colors.light.icon : Colors.dark.icon);
+
+  const badge =
+    withBadge
+      ? {
+          backgroundColor:
+            scheme === "light"
+              ? "rgba(0,0,0,0.06)"
+              : "rgba(255,255,255,0.1)",
+          borderRadius: 999,
+          padding: 6,
+        }
+      : {};
+
+  const iconName: ComponentProps<typeof MaterialIcons>["name"] =
+    MAPPING[name] ?? "help-outline";
+
+  return (
+    <MaterialIcons
+      name={iconName}
+      size={size}
+      color={tint}
+      style={[badge, style]}
+    />
+  );
 }

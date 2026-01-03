@@ -1,17 +1,22 @@
+// app/login.tsx
 import { router } from "expo-router";
-import React, { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
+
+import { Colors, Fonts, Radius, Spacing } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { supabase } from "../src/lib/supabase";
 
 export default function Login() {
@@ -19,9 +24,33 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const colorScheme = useColorScheme() ?? "dark";
+  const theme = Colors[colorScheme];
+
+  // Simple entrance animation for the card
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslateY = useRef(new Animated.Value(24)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(cardOpacity, {
+        toValue: 1,
+        duration: 260,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardTranslateY, {
+        toValue: 0,
+        duration: 260,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const onLogin = async () => {
     const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail || !password) return Alert.alert("Missing info", "Enter email and password.");
+    if (!cleanEmail || !password) {
+      return Alert.alert("Missing info", "Enter your email and password.");
+    }
 
     setLoading(true);
     try {
@@ -33,16 +62,14 @@ export default function Login() {
 
       const user = data.user;
 
-      // Ensure profile exists (RLS will pass because you're authenticated)
       const { error: profileErr } = await supabase.from("profiles").upsert(
         {
           id: user.id,
           email: cleanEmail,
-          full_name: null, // set later if you want
+          full_name: null,
         },
         { onConflict: "id" }
       );
-
       if (profileErr) throw profileErr;
 
       router.replace({
@@ -58,56 +85,216 @@ export default function Login() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={[styles.screen, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={80}
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View style={styles.container}>
-          <Text style={styles.h1}>Log in to Budyy</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.header}>
+          <Text
+            style={[
+              styles.logo,
+              { color: theme.tint, fontFamily: Fonts?.rounded ?? undefined },
+            ]}
+          >
+            Budyy
+          </Text>
+          <Text
+            style={[
+              styles.title,
+              { color: theme.text, fontFamily: Fonts?.sans ?? undefined },
+            ]}
+          >
+            Welcome back 👋
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+            Log in to see what’s safe to spend today.
+          </Text>
+        </View>
 
-          <Text style={styles.label}>Email</Text>
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              backgroundColor:
+                colorScheme === "dark"
+                  ? Colors.dark.cardGlass
+                  : Colors.light.cardGlass,
+              borderColor: theme.border,
+              shadowColor: "#000",
+              opacity: cardOpacity,
+              transform: [{ translateY: cardTranslateY }],
+            },
+          ]}
+        >
+          <Text style={[styles.cardTitle, { color: theme.text }]}>
+            Log in to Budyy
+          </Text>
+
+          <Text style={[styles.label, { color: theme.textMuted }]}>Email</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: theme.border,
+                color: theme.text,
+                backgroundColor:
+                  colorScheme === "dark" ? "#020617" : "#F9FAFB",
+              },
+            ]}
             value={email}
             onChangeText={setEmail}
             placeholder="you@example.com"
+            placeholderTextColor={theme.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="next"
           />
 
-          <Text style={styles.label}>Password</Text>
+          <Text style={[styles.label, { color: theme.textMuted }]}>
+            Password
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: theme.border,
+                color: theme.text,
+                backgroundColor:
+                  colorScheme === "dark" ? "#020617" : "#F9FAFB",
+              },
+            ]}
             value={password}
             onChangeText={setPassword}
             placeholder="Your password"
+            placeholderTextColor={theme.textMuted}
             secureTextEntry
             returnKeyType="done"
           />
 
-          <Pressable style={styles.button} onPress={onLogin} disabled={loading}>
-            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Log in</Text>}
+          <Pressable
+            style={[
+              styles.primaryButton,
+              {
+                backgroundColor: theme.tint,
+                opacity: loading ? 0.7 : 1,
+              },
+            ]}
+            onPress={onLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#0B1120" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Log in</Text>
+            )}
           </Pressable>
 
-          <Pressable onPress={() => router.push("/signup")} style={styles.linkBtn}>
-            <Text style={styles.linkText}>New here? Create an account</Text>
+          <Pressable
+            onPress={() => router.push("/signup")}
+            style={styles.linkBtn}
+          >
+            <Text
+              style={[
+                styles.linkText,
+                { color: theme.textMuted, textDecorationColor: theme.textMuted },
+              ]}
+            >
+              New to Budyy? Create an account
+            </Text>
           </Pressable>
-        </View>
+        </Animated.View>
+
+        <Text style={[styles.footerNote, { color: theme.textMuted }]}>
+          Budyy gives guidance only — not regulated financial advice.
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: "center", gap: 10 },
-  h1: { fontSize: 22, fontWeight: "700", marginBottom: 10 },
-  label: { fontSize: 14, fontWeight: "600" },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 16 },
-  button: { marginTop: 8, backgroundColor: "black", padding: 14, borderRadius: 12, alignItems: "center" },
-  buttonText: { color: "white", fontSize: 16, fontWeight: "700" },
-  linkBtn: { marginTop: 14, alignItems: "center" },
-  linkText: { fontSize: 14, color: "#444", textDecorationLine: "underline" },
+  screen: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 70,
+    paddingBottom: 34,
+  },
+  header: {
+    marginBottom: Spacing.lg,
+  },
+  logo: {
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+  },
+  title: {
+    marginTop: 8,
+    fontSize: 26,
+    fontWeight: "800",
+  },
+  subtitle: {
+    marginTop: 4,
+    fontSize: 13,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    marginBottom: Spacing.md,
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 18 },
+    elevation: 10,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: Spacing.md,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: Spacing.sm,
+    marginBottom: 4,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+  },
+  primaryButton: {
+    marginTop: Spacing.md,
+    paddingVertical: 14,
+    borderRadius: Radius.md,
+    alignItems: "center",
+  },
+  primaryButtonText: {
+    color: "#0B1120",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  linkBtn: {
+    marginTop: Spacing.sm + 2,
+    alignItems: "center",
+  },
+  linkText: {
+    fontSize: 13,
+    textDecorationLine: "underline",
+  },
+  footerNote: {
+    marginTop: Spacing.md,
+    fontSize: 11,
+    textAlign: "center",
+  },
 });
