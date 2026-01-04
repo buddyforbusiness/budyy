@@ -1,5 +1,8 @@
 // app/(tabs)/index.tsx
+import { getMockSummaryForCurrentMonth } from "@/mock/bank-data";
 import { useEffect, useRef } from "react";
+
+
 import {
   Animated,
   ScrollView,
@@ -37,9 +40,10 @@ export default function HomeTab() {
   }, []);
 
   // mock values for now – later we’ll calculate from transactions
-  const safeToSpend = "£240";
-  const incomeThisMonth = "£2,100";
-  const billsThisMonth = "£1,260";
+  const summary = getMockSummaryForCurrentMonth();
+  const safeToSpend = `£${Math.round(summary.safeToSpendToday)}`;
+  const incomeThisMonth = `£${Math.round(summary.income)}`;
+  const billsThisMonth = `£${Math.round(summary.fixedExpenses)}`;
 
   return (
     <SafeAreaView

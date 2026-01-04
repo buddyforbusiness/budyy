@@ -1,18 +1,44 @@
 // app/welcome.tsx
 import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { supabase } from "../src/lib/supabase";
 
 export default function Welcome() {
   const params = useLocalSearchParams<{ fullName?: string; email?: string }>();
 
+  // whether user has completed onboarding questionnaire
+  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth?.user) return;
+
+      const { data } = await supabase
+        .from("user_onboarding")
+        .select("user_id")
+        .eq("user_id", auth.user.id)
+        .maybeSingle();
+
+      setHasOnboarded(!!data);
+    };
+
+    load();
+  }, []);
+
   const logout = async () => {
     await supabase.auth.signOut();
     router.replace("/signup");
   };
 
-  const goToApp = () => {
-    router.replace("/(tabs)");
+  // button action — decides where to go
+  const continueFlow = () => {
+    if (hasOnboarded) {
+      router.replace("/(tabs)");
+    } else {
+      router.replace("/onboarding");
+    }
   };
 
   const displayName =
@@ -22,13 +48,13 @@ export default function Welcome() {
 
   return (
     <View style={styles.screen}>
-      {/* Header / hero */}
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.appName}>Budyy</Text>
         <Text style={styles.title}>You’re in, {displayName} 🎉</Text>
         <Text style={styles.subtitle}>
-          We’ll help you see what’s safe to spend, what’s locked in bills, and what
-          can go towards your goals.
+          We’ll help you see what’s safe to spend, what’s locked in bills, and
+          what can go towards your goals.
         </Text>
       </View>
 
@@ -40,17 +66,21 @@ export default function Welcome() {
           <Text style={styles.emailText}>You’re signed in.</Text>
         )}
 
-        <View style={styles.steps}>
+        <View className="steps">
           <Text style={styles.stepsTitle}>What happens next?</Text>
-          <Text style={styles.stepItem}>• Home shows your safe-to-spend today</Text>
-          <Text style={styles.stepItem}>• Chat lets you ask Budyy money questions</Text>
-          <Text style={styles.stepItem}>• Goals & Insights keep you on track</Text>
+          <Text style={styles.stepItem}>• Answer a few quick questions</Text>
+          <Text style={styles.stepItem}>• See where you stand financially</Text>
+          <Text style={styles.stepItem}>• Start using Budyy dashboard</Text>
         </View>
 
-        <Pressable style={styles.primaryButton} onPress={goToApp}>
-          <Text style={styles.primaryButtonText}>Open Budyy</Text>
+        {/* Primary Button */}
+        <Pressable style={styles.primaryButton} onPress={continueFlow}>
+          <Text style={styles.primaryButtonText}>
+            {hasOnboarded ? "Open Budyy" : "Get Started"}
+          </Text>
         </Pressable>
 
+        {/* Logout */}
         <Pressable style={styles.secondaryButton} onPress={logout}>
           <Text style={styles.secondaryButtonText}>Log out</Text>
         </Pressable>
@@ -104,10 +134,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#E5E7EB",
     marginBottom: 10,
-  },
-  steps: {
-    marginTop: 6,
-    marginBottom: 16,
   },
   stepsTitle: {
     fontSize: 14,
