@@ -83,9 +83,15 @@ export default function ExploreScreen() {
               and safe-to-spend. Uses TrueLayer open banking.
             </Text>
 
-            <Pressable style={styles.cta} onPress={connectBank}>
-              <Text style={styles.ctaText}>Connect a bank</Text>
-            </Pressable>
+            <Pressable
+  style={styles.cta}
+  onPress={() => {
+    console.log("✅ Connect bank pressed");
+    connectBank();
+  }}
+>
+  <Text style={styles.ctaText}>Connect a bank</Text>
+</Pressable>
           </View>
 
           {/* CARD 1: Chat */}

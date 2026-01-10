@@ -1,5 +1,5 @@
 // src/engines/banking.ts
-import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { Alert } from "react-native";
 
 import { API_BASE_URL } from "../config";
@@ -12,19 +12,36 @@ export async function connectBank() {
     const res = await fetch(fullUrl);
     console.log("connectBank Status:", res.status);
 
-    if (!res.ok) throw new Error("Failed to get auth URL");
+    const text = await res.text();
+    console.log("connectBank raw body:", text);
 
-    const json = await res.json();
+    if (!res.ok) throw new Error(`Failed to get auth URL, status=${res.status}`);
+
+    let json: any;
+    try {
+      json = JSON.parse(text);
+    } catch (err) {
+      console.log("JSON parse error:", err);
+      throw new Error("Response from /truelayer/auth-url was not valid JSON");
+    }
+
     console.log("connectBank JSON:", json);
 
-    if (!json.url) throw new Error("Missing auth URL");
+    if (!json.url || typeof json.url !== "string") {
+      throw new Error("Missing or invalid 'url' field in auth response");
+    }
 
-    await Linking.openURL(json.url);
+    // Show what we're about to open
+    Alert.alert("Opening bank auth", json.url);
+
+    console.log("Opening bank auth URL:", json.url);
+    const result = await WebBrowser.openBrowserAsync(json.url);
+    console.log("WebBrowser result:", result);
   } catch (e) {
     console.log("connectBank error", e);
     Alert.alert(
       "Could not start bank connection",
-      String(e) || "Please try again."
+      e instanceof Error ? e.message : String(e)
     );
   }
 }

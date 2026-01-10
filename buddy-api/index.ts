@@ -5,7 +5,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 
-dotenv.config();
+dotenv.config(); // load .env FIRST
 
 const app = express();
 app.use(cors());
@@ -18,6 +18,21 @@ const supabaseAdmin = createClient(
 );
 
 /**
+ * 🔍 DEBUG ENV — TEMP helper
+ */
+app.get("/debug/env", (_req, res) => {
+  res.json({
+    TRUELAYER_AUTH_URL: !!process.env.TRUELAYER_AUTH_URL,
+    TRUELAYER_CLIENT_ID: !!process.env.TRUELAYER_CLIENT_ID,
+    TRUELAYER_CLIENT_SECRET: !!process.env.TRUELAYER_CLIENT_SECRET,
+    TRUELAYER_REDIRECT_URI: process.env.TRUELAYER_REDIRECT_URI,
+    SUPABASE_URL: !!process.env.SUPABASE_URL,
+    SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
+    NODE_ENV: process.env.NODE_ENV,
+  });
+});
+
+/**
  * HEALTH CHECK
  */
 app.get("/health", (_req, res) => {
@@ -26,14 +41,22 @@ app.get("/health", (_req, res) => {
 
 /**
  * AUTH URL — Step 1 (sandbox)
+ * Returns a prebuilt TrueLayer auth link from .env
  */
 app.get("/truelayer/auth-url", (_req, res) => {
   console.log("HIT /truelayer/auth-url");
 
-  // 🔴 TEMP: return Google instead of TrueLayer URL
-  return res.json({
-    url: "https://www.google.com",
-  });
+  const authUrl = process.env.TRUELAYER_AUTH_URL;
+
+  if (!authUrl) {
+    console.error("❌ Missing TRUELAYER_AUTH_URL in .env");
+    return res
+      .status(500)
+      .json({ error: "TRUELAYER_AUTH_URL not configured" });
+  }
+
+  console.log("Returning TrueLayer auth url from env");
+  return res.json({ url: authUrl });
 });
 
 /**
@@ -93,6 +116,7 @@ app.post("/truelayer/token", async (req, res) => {
 
 const PORT = 4000;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Budyy API running on http://localhost:${PORT} (SANDBOX)`);
 });
+

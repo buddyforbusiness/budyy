@@ -1,14 +1,13 @@
 {
   "name": "buddy-api",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "build": "tsc",
+  "start": "node dist/index.js",
+  "dev": "npm run build && npm run start"
+},
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
     "axios": "^1.13.2",
