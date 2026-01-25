@@ -1,42 +1,58 @@
 // src/engines/banking.ts
 import * as WebBrowser from "expo-web-browser";
 import { Alert } from "react-native";
-
 import { API_BASE_URL } from "../config";
 
-export async function connectBank() {
+function getQueryParam(url: string, key: string) {
+  const u = new URL(url);
+  return u.searchParams.get(key);
+}
+
+export async function connectBank(userId: string) {
   try {
-    const fullUrl = `${API_BASE_URL}/truelayer/auth-url`;
-    console.log("connectBank Hitting:", fullUrl);
-
-    const res = await fetch(fullUrl);
-    console.log("connectBank Status:", res.status);
-
+    // 1) Get auth URL from backend
+    const res = await fetch(`${API_BASE_URL}/truelayer/auth-url`);
     const text = await res.text();
-    console.log("connectBank raw body:", text);
 
-    if (!res.ok) throw new Error(`Failed to get auth URL, status=${res.status}`);
+    console.log("auth-url raw response:", text);
 
-    let json: any;
-    try {
-      json = JSON.parse(text);
-    } catch (err) {
-      console.log("JSON parse error:", err);
-      throw new Error("Response from /truelayer/auth-url was not valid JSON");
+
+    if (!res.ok) throw new Error(`Failed to get auth URL, status=${res.status}: ${text}`);
+
+    const json = JSON.parse(text);
+    const authUrl: string = json.url;
+    if (!authUrl) throw new Error("Missing url from /truelayer/auth-url");
+
+    // 2) IMPORTANT: redirectUri must match what you registered in TrueLayer
+    // Use the SAME one you set in TrueLayer + buddy-api/.env:
+    const redirectUri = "exp://192.168.0.202:8081/--/oauth";
+
+    console.log("Opening auth:", authUrl);
+    console.log("Redirect URI:", redirectUri);
+
+    // 3) Open auth session and wait for redirect back
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+    console.log("openAuthSessionAsync result:", result);
+
+    if (result.type !== "success" || !result.url) {
+      throw new Error(`Auth not completed: ${result.type}`);
     }
 
-    console.log("connectBank JSON:", json);
+    // 4) Extract code from returned redirect URL
+    const code = getQueryParam(result.url, "code");
+    if (!code) throw new Error(`No code found in redirect URL: ${result.url}`);
 
-    if (!json.url || typeof json.url !== "string") {
-      throw new Error("Missing or invalid 'url' field in auth response");
-    }
+    // 5) Exchange code for tokens
+    const tokenRes = await fetch(`${API_BASE_URL}/truelayer/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, userId }),
+    });
 
-    // Show what we're about to open
-    Alert.alert("Opening bank auth", json.url);
+    const tokenText = await tokenRes.text();
+    if (!tokenRes.ok) throw new Error(`Token exchange failed: ${tokenText}`);
 
-    console.log("Opening bank auth URL:", json.url);
-    const result = await WebBrowser.openBrowserAsync(json.url);
-    console.log("WebBrowser result:", result);
+    Alert.alert("Bank connected ✅", "Success!");
   } catch (e) {
     console.log("connectBank error", e);
     Alert.alert(

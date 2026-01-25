@@ -1,7 +1,7 @@
 // Local development backend URL
 
 // If using iOS/Android simulator on same computer:
-export const API_BASE_URL = "https://immediate-nuke-watts-watches.trycloudflare.com";
+export const API_BASE_URL = "https://then-making-toys-persian.trycloudflare.com";
 
 // If using Expo Go on a real phone:
 // replace localhost with your laptop IP address, e.g.
