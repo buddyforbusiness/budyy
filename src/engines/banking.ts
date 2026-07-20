@@ -2,16 +2,24 @@
 import * as WebBrowser from "expo-web-browser";
 import { Alert } from "react-native";
 import { API_BASE_URL } from "../config";
+import { supabase } from "../lib/supabase";
 
 function getQueryParam(url: string, key: string) {
   const u = new URL(url);
   return u.searchParams.get(key);
 }
 
-export async function connectBank(userId: string) {
+async function getAuthHeaders() {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) throw new Error("Please sign in before connecting a bank.");
+  return { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" };
+}
+
+export async function connectBank() {
   try {
     // 1) Get auth URL from backend
-    const res = await fetch(`${API_BASE_URL}/truelayer/auth-url`);
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE_URL}/v1/banking/authorisation-url`, { headers });
     const text = await res.text();
 
     console.log("auth-url raw response:", text);
@@ -25,7 +33,8 @@ export async function connectBank(userId: string) {
 
     // 2) IMPORTANT: redirectUri must match what you registered in TrueLayer
     // Use the SAME one you set in TrueLayer + buddy-api/.env:
-    const redirectUri = "exp://192.168.0.202:8081/--/oauth";
+    const redirectUri = process.env.EXPO_PUBLIC_TRUELAYER_REDIRECT_URI;
+    if (!redirectUri) throw new Error("TrueLayer redirect URI is not configured.");
 
     console.log("Opening auth:", authUrl);
     console.log("Redirect URI:", redirectUri);
@@ -41,12 +50,14 @@ export async function connectBank(userId: string) {
     // 4) Extract code from returned redirect URL
     const code = getQueryParam(result.url, "code");
     if (!code) throw new Error(`No code found in redirect URL: ${result.url}`);
+    const state = getQueryParam(result.url, "state");
+    if (!state) throw new Error("Bank connection state was not returned.");
 
     // 5) Exchange code for tokens
-    const tokenRes = await fetch(`${API_BASE_URL}/truelayer/token`, {
+    const tokenRes = await fetch(`${API_BASE_URL}/v1/banking/callback`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, userId }),
+      headers,
+      body: JSON.stringify({ code, state }),
     });
 
     const tokenText = await tokenRes.text();
