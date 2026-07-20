@@ -1,50 +1,53 @@
-# Welcome to your Expo app 👋
+# Buddy
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Buddy is a premium, proactive personal-finance companion for UK students, graduates, professionals and families. It combines account aggregation, deterministic cash-flow intelligence, goals and explainable financial coaching.
 
-## Get started
+## Repository
 
-1. Install dependencies
+- `app/` — Expo Router mobile/web application
+- `src/engines/` — deterministic finance and banking logic
+- `buddy-api/` — authenticated Node/Express API and TrueLayer adapter
+- `supabase/migrations/` — PostgreSQL schema and Row Level Security
 
-   ```bash
-   npm install
-   ```
+## Local setup
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Requirements: Node 20+, npm, an Expo development environment, a Supabase project and TrueLayer sandbox credentials.
 
 ```bash
-npm run reset-project
+cp .env.example .env
+cp buddy-api/.env.example buddy-api/.env
+npm ci
+cd buddy-api && npm ci
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Generate the API encryption key with `openssl rand -base64 32`, place it only in `buddy-api/.env`, and apply the SQL migrations through the Supabase CLI or dashboard.
 
-## Learn more
+Run the services in separate terminals:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+cd buddy-api && npm run dev
+npm start
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Security model
 
-## Join the community
+- Supabase sessions authenticate every user-owned API request.
+- The API derives identity from the verified access token, never the request body.
+- TrueLayer access and refresh tokens are AES-256-GCM encrypted before storage.
+- Service-role credentials remain server-side.
+- RLS isolates profiles, onboarding answers, accounts, transactions and goals.
+- Financial calculations are deterministic; AI is used only to explain and personalise results.
 
-Join our community of developers creating universal apps.
+Never commit `.env` files or production banking credentials. Rotate credentials immediately if they are exposed.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Validation
+
+```bash
+npm run lint
+npx tsc --noEmit
+cd buddy-api && npm run build
+```
+
+## Current product status
+
+The repository contains the core mobile journeys, Supabase authentication, onboarding, dashboard, goals, insights, chat shell, deterministic safe-to-spend engine and a secured TrueLayer sandbox connection foundation. Live account synchronisation, background jobs, notifications and the AI provider adapter remain subsequent production milestones.
